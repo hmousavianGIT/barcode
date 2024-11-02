@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بارکد خوان</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quaggaJS/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+    <h1>بارکد خوان محصولات</h1>
+    <div id="interactive" style="width: 300px;"></div>
+    <button id="start">شروع</button>
+    <div id="result"></div>
+    <input type="text" id="productName" placeholder="نام محصول" />
+    <input type="number" id="productPrice" placeholder="قیمت محصول" />
+    <button id="save">ذخیره در اکسل</button>
+
+    <script>
+        let barcodeData = '';
+
+        document.getElementById('start').onclick = function () {
+            Quagga.init({
+                inputStream : {
+                    name : "Live",
+                    type : "LiveStream",
+                    target: document.getElementById('interactive')
+                },
+                decoder : {
+                    readers : ["code_128_reader"]
+                }
+            }, (err) => {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected((data) => {
+                barcodeData = data.codeResult.code;
+                document.getElementById('result').innerText = `بارکد شناسایی شده: ${barcodeData}`;
+                Quagga.stop();
+            });
+        };
+
+        document.getElementById('save').onclick = function() {
+            const name = document.getElementById('productName').value;
+            const price = document.getElementById('productPrice').value;
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet([{ Barcode: barcodeData, Name: name, Price: price }]);
+            XLSX.utils.book_append_sheet(wb, ws, "Products");
+
+            XLSX.writeFile(wb, "Products.xlsx");
+        };
+    </script>
+</body>
+</html>
